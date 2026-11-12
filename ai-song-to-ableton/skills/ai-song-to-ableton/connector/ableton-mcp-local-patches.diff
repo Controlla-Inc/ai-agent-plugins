@@ -1,0 +1,201 @@
+diff --git a/AbletonMCP_Remote_Script/__init__.py b/AbletonMCP_Remote_Script/__init__.py
+index c94d91d..4854bbc 100644
+--- a/AbletonMCP_Remote_Script/__init__.py
++++ b/AbletonMCP_Remote_Script/__init__.py
+@@ -291,7 +291,8 @@ class AbletonMCP(ControlSurface):
+             elif command_type in ["create_midi_track", "create_audio_track", "set_track_name",
+                                  "create_clip", "create_audio_clip", "add_notes_to_clip", "set_clip_name",
+                                  "set_arrangement_clip_name",
+-                                 "delete_clip",
++                                 "delete_clip", "set_clip_warping", "delete_arrangement_clip",
++                                 "set_mixer", "delete_device",
+                                  "clear_notes_from_clip",
+                                  "set_tempo", "fire_clip", "stop_clip",
+                                  "start_playback", "stop_playback",
+@@ -327,7 +328,25 @@ class AbletonMCP(ControlSurface):
+                             track_index = params.get("track_index", 0)
+                             clip_index = params.get("clip_index", 0)
+                             path = params.get("path", "")
+-                            result = self._create_audio_clip(track_index, clip_index, path)
++                            warping = params.get("warping", False)
++                            result = self._create_audio_clip(track_index, clip_index, path, warping)
++                        elif command_type == "set_mixer":
++                            result = self._set_mixer(params)
++                        elif command_type == "delete_device":
++                            t = self._song.tracks[int(params.get("track_index", 0))]
++                            i = int(params.get("device_index", 0))
++                            name = t.devices[i].name
++                            if params.get("expect_name") and params["expect_name"] != name:
++                                raise Exception("device {0} is {1}, not {2}".format(i, name, params["expect_name"]))
++                            t.delete_device(i)
++                            result = {"deleted": name}
++                        elif command_type == "set_clip_warping":
++                            result = self._set_clip_warping(params.get("track_index", 0),
++                                                            params.get("clip_index", 0),
++                                                            params.get("warping", False))
++                        elif command_type == "delete_arrangement_clip":
++                            result = self._delete_arrangement_clip(params.get("track_index", 0),
++                                                                   params.get("clip_index", 0))
+                         elif command_type == "add_notes_to_clip":
+                             track_index = params.get("track_index", 0)
+                             clip_index = params.get("clip_index", 0)
+@@ -451,6 +470,8 @@ class AbletonMCP(ControlSurface):
+             elif command_type == "get_arrangement_clips":
+                 track_index = params.get("track_index", 0)
+                 response["result"] = self._get_arrangement_clips(track_index)
++            elif command_type == "get_meters":
++                response["result"] = self._get_meters()
+             # Dataset / state-snapshot reads
+             elif command_type == "get_clip_notes":
+                 track_index = params.get("track_index", 0)
+@@ -723,12 +744,77 @@ class AbletonMCP(ControlSurface):
+             self.log_message("Error creating clip: " + str(e))
+             raise
+ 
+-    def _create_audio_clip(self, track_index, clip_index, path):
++    def _mixer_target(self, params):
++        """track_index >= 0: a track; -1: master; or return_index for a return track."""
++        if params.get("return_index") is not None:
++            return self._song.return_tracks[int(params["return_index"])]
++        t = int(params.get("track_index", 0))
++        return self._song.master_track if t == -1 else self._song.tracks[t]
++
++    def _set_mixer(self, params):
++        """Set volume / pan (raw Live values) and/or sends {index: value} on one track.
++        Returns the display strings so the caller can see dB values."""
++        track = self._mixer_target(params)
++        md = track.mixer_device
++        if params.get("volume") is not None:
++            md.volume.value = max(md.volume.min, min(md.volume.max, float(params["volume"])))
++        if params.get("pan") is not None:
++            md.panning.value = max(-1.0, min(1.0, float(params["pan"])))
++        for k, v in (params.get("sends") or {}).items():
++            s = md.sends[int(k)]
++            s.value = max(s.min, min(s.max, float(v)))
++        return {
++            "name": track.name,
++            "volume": md.volume.value, "volume_str": md.volume.str_for_value(md.volume.value),
++            "pan": md.panning.value,
++            "sends": [{"value": s.value, "str": s.str_for_value(s.value)} for s in md.sends] if hasattr(md, "sends") else [],
++        }
++
++    def _get_meters(self):
++        """Instantaneous output meter levels (Live's 0..1 meter scale) for every track,
++        return track and the master."""
++        def m(t):
++            # tracks routed to MIDI output raise (not AttributeError) on the audio meters
++            try:
++                return {"name": t.name, "l": float(t.output_meter_left), "r": float(t.output_meter_right)}
++            except Exception:
++                try:
++                    v = float(t.output_meter_level)
++                except Exception:
++                    v = 0.0
++                return {"name": t.name, "l": v, "r": v, "midi_out": True}
++        return {"tracks": [m(t) for t in self._song.tracks],
++                "returns": [m(t) for t in self._song.return_tracks],
++                "master": m(self._song.master_track),
++                "playing": bool(self._song.is_playing),
++                "time": float(self._song.current_song_time)}
++
++    def _set_clip_warping(self, track_index, clip_index, warping):
++        """Turn warping on/off for a Session audio clip."""
++        clip = self._song.tracks[track_index].clip_slots[clip_index].clip
++        if clip is None or not clip.is_audio_clip:
++            raise Exception("No audio clip in slot")
++        clip.warping = bool(warping)
++        return {"warping": clip.warping, "length": clip.length}
++
++    def _delete_arrangement_clip(self, track_index, clip_index):
++        """Delete an Arrangement clip, indexed in start-time order (as get_arrangement_clips)."""
++        track = self._song.tracks[track_index]
++        clips = sorted(track.arrangement_clips, key=lambda c: c.start_time)
++        clip = clips[clip_index]
++        name = clip.name
++        track.delete_clip(clip)
++        return {"deleted": name}
++
++    def _create_audio_clip(self, track_index, clip_index, path, warping=False):
+         """Create an audio clip in the specified audio track clip slot by importing a file.
+ 
+         Requires Ableton Live 12.0.5 or newer (the underlying
+         ClipSlot.create_audio_clip Live API was introduced in 12.0.5 — it is
+         not available in earlier 12.0.x releases).
++
++        warping defaults to False: Live's auto-warp guesses a tempo for long files
++        and can stretch a stem that was rendered at the session tempo.
+         """
+         try:
+             if not path:
+@@ -760,6 +846,8 @@ class AbletonMCP(ControlSurface):
+                 )
+ 
+             clip_slot.create_audio_clip(path)
++            if clip_slot.clip.is_audio_clip:
++                clip_slot.clip.warping = bool(warping)
+ 
+             result = {
+                 "name": clip_slot.clip.name,
+@@ -1291,12 +1379,14 @@ class AbletonMCP(ControlSurface):
+         return self._load_browser_item(track_index, uri)
+ 
+     def _load_browser_item(self, track_index, item_uri):
+-        """Load a browser item onto a track by its URI"""
++        """Load a browser item onto a track by its URI (track_index -1 = master track)"""
+         try:
+-            if track_index < 0 or track_index >= len(self._song.tracks):
++            if track_index == -1:
++                track = self._song.master_track
++            elif track_index < 0 or track_index >= len(self._song.tracks):
+                 raise IndexError("Track index out of range")
+-            
+-            track = self._song.tracks[track_index]
++            else:
++                track = self._song.tracks[track_index]
+             
+             # Access the application's browser instance instead of creating a new one
+             app = self.application()
+@@ -1307,12 +1397,28 @@ class AbletonMCP(ControlSurface):
+             if not item:
+                 raise ValueError("Browser item with URI '{0}' not found".format(item_uri))
+             
++            # A live hot-swap target redirects load_item to whatever device it points at
++            # (it once replaced a Drum Rack on another track). Leave hot-swap mode first.
++            try:
++                if app.browser.hotswap_target is not None:
++                    app.view.toggle_browse()
++            except Exception as e:
++                self.log_message("hotswap check failed: " + str(e))
++            if getattr(app.browser, "hotswap_target", None) is not None:
++                raise Exception("Live is in hot-swap mode; refusing to load (it would replace a device elsewhere)")
++
+             # Select the track
+             self._song.view.selected_track = track
+-            
++            before = {t.name: [d.name for d in t.devices] for t in self._song.tracks}
++
+             # Load the item
+             app.browser.load_item(item)
+-            
++
++            changed = [n for n, devs in ((t.name, [d.name for d in t.devices]) for t in self._song.tracks)
++                       if devs != before.get(n)]
++            if changed and track.name not in changed and track_index != -1:
++                raise Exception("Load landed on {0} instead of {1}".format(changed, track.name))
++
+             result = {
+                 "loaded": True,
+                 "item_name": item.name,
+diff --git a/MCP_Server/server.py b/MCP_Server/server.py
+index 770119a..6b5a343 100644
+--- a/MCP_Server/server.py
++++ b/MCP_Server/server.py
+@@ -894,7 +894,7 @@ def load_instrument_or_effect(ctx: Context, track_index: int, uri: str, user_pro
+     Load an instrument or effect onto a track using its URI.
+ 
+     Parameters:
+-    - track_index: The index of the track to load the instrument on
++    - track_index: The index of the track to load the instrument on (-1 = master track, for effects)
+     - uri: The URI of the instrument or effect to load (e.g., 'query:Synths#Instrument%20Rack:Bass:FileId_5116')
+     - user_prompt: The original user prompt that led to this tool call (for telemetry)
+     """

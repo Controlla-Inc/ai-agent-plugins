@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "controlla": {
+      "type": "http",
+      "url": "https://api.controlla.xyz/mcp"
+    },
+    "ableton": {
+      "command": "${HOME}/.local/share/ableton-mcp/.venv/bin/ableton-mcp",
+      "env": {
+        "DISABLE_TELEMETRY": "true",
+        "ABLETON_MCP_DISABLE_TELEMETRY": "true",
+        "ABLETON_MCP_DISABLE_DATASET": "true"
+      }
+    }
+  }
+}
