@@ -17,7 +17,7 @@ plugins. Ableton has a Python Remote Script API, which the AbletonMCP connector 
 
 ## Install
 
-If this skill came from the **ai-song-to-ableton plugin**, run `/setup-ableton` — it does all of
+If this skill came from the **ableton plugin** (`ableton@controlla`), run `/ableton:setup` — it does all of
 the below and the plugin already registers both connectors. Otherwise, from this skill's folder:
 
 ```bash

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Launches the AbletonMCP connector that connector/install.sh installs. Agent
+# Plugins' mcp.json can't expand $HOME, so it points here instead.
+exec "$HOME/.local/share/ableton-mcp/.venv/bin/ableton-mcp" "$@"

@@ -1,0 +1,18 @@
+{
+  "name": "ableton",
+  "version": "0.3.0",
+  "description": "Turn an AI-generated song into an editable Ableton Live session: stems, MIDI parts on real instruments, a cloned drum kit, reference stems and a first mix. Uses the Controlla Voice connector and AbletonMCP.",
+  "author": {
+    "name": "Controlla",
+    "url": "https://voice.controlla.xyz"
+  },
+  "homepage": "https://voice.controlla.xyz/mcp",
+  "keywords": [
+    "ableton",
+    "music",
+    "midi",
+    "stems",
+    "controlla"
+  ],
+  "repository": "https://github.com/Controlla-Inc/ai-agent-plugins"
+}
