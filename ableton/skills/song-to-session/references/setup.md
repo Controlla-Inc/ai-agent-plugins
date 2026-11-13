@@ -17,7 +17,7 @@ plugins. Ableton has a Python Remote Script API, which the AbletonMCP connector 
 
 ## Install
 
-If this skill came from the **ai-song-to-ableton plugin**, run `/setup-ableton` — it does all of
+If this skill came from the **ableton plugin** (`ableton@controlla`), run `/ableton:setup` — it does all of
 the below and the plugin already registers both connectors. Otherwise, from this skill's folder:
 
 ```bash
@@ -42,7 +42,7 @@ claude mcp add ableton --scope user \
 ## In Live
 
 1. Quit Live completely and reopen it (Remote Script code is only read at startup).
-2. Settings → Link, Tempo & MIDI → Control Surface: **AbletonMCP**, Input/Output: None.
+2. Settings → Tempo & MIDI (older Live: "Link, Tempo & MIDI") → Control Surface: **AbletonMCP**, Input/Output: None.
 3. Settings → Plug-Ins: turn on "Use VST3 Plug-In System Folders" (and AU on macOS) and
    rescan, so the user's plugins show in the browser and can be loaded by URI.
 4. Check: `~/.local/share/ai-song-to-ableton/venv/bin/python scripts/live.py tracks` lists tracks.

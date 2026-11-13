@@ -67,11 +67,11 @@ echo "analysis venv -> $VENV"
 cat <<EOF
 
 Next:
-  1. Installed via the ai-song-to-ableton plugin? The connector is already registered —
+  1. Installed via the ableton plugin (ableton@controlla)? The connector is already registered —
      just restart Claude Code. Otherwise register it (telemetry + dataset uploads off):
        claude mcp add ableton --scope user \\
          -e DISABLE_TELEMETRY=true -e ABLETON_MCP_DISABLE_TELEMETRY=true -e ABLETON_MCP_DISABLE_DATASET=true \\
          -- "$DEST/.venv/bin/ableton-mcp"
   2. QUIT Live completely and reopen it (Live only loads Remote Script code at startup).
-  3. Live > Settings > Link, Tempo & MIDI > Control Surface: pick "AbletonMCP" (Input/Output: None).
+  3. Live > Settings > Tempo & MIDI (older Live: "Link, Tempo & MIDI") > Control Surface: pick "AbletonMCP" (Input/Output: None).
 EOF

@@ -1,13 +1,18 @@
 {
   "name": "controlla",
-  "owner": { "name": "Controlla", "url": "https://voice.controlla.xyz" },
-  "metadata": { "description": "Claude Code plugins from Controlla Voice for making music with Claude." },
+  "owner": {
+    "name": "Controlla",
+    "url": "https://voice.controlla.xyz"
+  },
+  "metadata": {
+    "description": "Controlla Voice plugins for AI agents (Claude Code, Codex, Cursor, Copilot and more) for making music."
+  },
   "plugins": [
     {
-      "name": "ai-song-to-ableton",
-      "source": "./ai-song-to-ableton",
+      "name": "ableton",
+      "source": "./ableton",
       "description": "Turn an AI-generated song into an editable Ableton Live session: stems, MIDI parts on real instruments, a cloned drum kit, reference stems and a first mix.",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "category": "music"
     }
   ]
