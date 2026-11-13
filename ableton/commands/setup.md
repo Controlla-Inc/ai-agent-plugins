@@ -13,7 +13,7 @@ Set up the ableton plugin (song-to-session) on this computer. Follow these steps
 4. The plugin already registers both connectors (`controlla` and `ableton`), so do NOT run `claude mcp add`. Tell the user to restart Claude Code after setup so the `ableton` connector starts now that it exists.
 5. Tell the user the steps only they can do in Ableton Live:
    - Quit Live completely and reopen it (Live only loads Remote Scripts at startup).
-   - Settings → Link, Tempo & MIDI → Control Surface: choose **AbletonMCP** (Input/Output: None).
+   - Settings → Tempo & MIDI (older Live: "Link, Tempo & MIDI") → Control Surface: choose **AbletonMCP** (Input/Output: None).
    - Settings → Plug-Ins: turn on "Use VST3 Plug-In System Folders" (and Audio Units on macOS), then rescan.
 6. Remind them of the other two requirements:
    - The **Controlla** connector signs in the first time it's used (a paid Controlla Voice plan; it uses their credits).

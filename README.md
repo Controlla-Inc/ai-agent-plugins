@@ -75,7 +75,7 @@ bash ableton/skills/song-to-session/connector/install.sh --check
   analysis scripts. AbletonMCP's telemetry and dataset uploads are switched off.
 
 After setup, restart your agent, quit and reopen Live, and pick **AbletonMCP** under
-Settings → Link, Tempo & MIDI → Control Surface.
+Settings → Tempo & MIDI → Control Surface (on older Live versions the page is called "Link, Tempo & MIDI").
 
 ### Upgrading from `ai-song-to-ableton`
 
