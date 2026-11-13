@@ -49,7 +49,9 @@ Then run the one-time setup:
 ### Install in other agents
 
 Add the `ableton/` folder as an Agent Plugins plugin, the way your agent installs them. Then ask the
-agent to run the one-time setup, which is the same script `/ableton:setup` runs:
+agent to run the one-time setup, which is the same script `/ableton:setup` runs. Run it from a
+clone of this repository (for example `git clone https://github.com/Controlla-Inc/ai-agent-plugins`,
+then `cd ai-agent-plugins`):
 
 ```bash
 bash ableton/skills/song-to-session/connector/install.sh
@@ -58,7 +60,7 @@ bash ableton/skills/song-to-session/connector/install.sh --check
 
 ### You need
 
-- Ableton Live 12.0.5 or newer (Standard or Suite), on macOS or Windows
+- Ableton Live 12.0.5 or newer (Standard or Suite), on macOS
 - A paid [Controlla Voice](https://voice.controlla.xyz) plan. The Controlla connector signs in on
   first use and spends your credits.
 - `git` and [`uv`](https://docs.astral.sh/uv/). In Claude Code, `/ableton:setup` helps install `uv`.

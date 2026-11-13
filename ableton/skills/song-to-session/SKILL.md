@@ -1,7 +1,7 @@
 ---
 name: song-to-session
 description: Turn an AI-generated song (Controlla Voice) into a ~70%-finished, editable Ableton Live session with no clicks from the user — generate the song, split stems, transcribe to MIDI, clone the drum kit into a Drum Rack, write clean held parts on real instruments, line everything up on the grid, add muted reference stems, and do a first mix (or, for Logic Pro users, export the same draft as a MIDI file + aligned stems + kit + README). Use this whenever someone wants an AI song "in Ableton" (or in Logic Pro), a "first draft"/"starting point" session from a prompt or an existing track (including the user's own bounce from Logic or another DAW), to rebuild a song's parts as MIDI with new instruments, to replace drums with a cloned kit, or to continue/fix/mix a draft this pipeline made — even if they don't name the skill, and even for one step of it (e.g. "make the bass sit lower", "add the stems underneath as references", "mix it").
-compatibility: macOS (or Windows) + Ableton Live 12.0.5+ (Standard is enough), and an AI agent that can run local commands (Claude Code, Codex, Cursor, GitHub Copilot and others) with the Controlla Voice connector and the AbletonMCP connector installed via connector/install.sh (Claude Code: the plugin's /ableton:setup); Claude in Chrome only as a fallback for the Song to MIDI step.
+compatibility: macOS + Ableton Live 12.0.5+ (Standard is enough), and an AI agent that can run local commands (Claude Code, Codex, Cursor, GitHub Copilot and others) with the Controlla Voice connector and the AbletonMCP connector installed via connector/install.sh (Claude Code: the plugin's /ableton:setup); Claude in Chrome only as a fallback for the Song to MIDI step.
 ---
 
 # AI song → Ableton draft
