@@ -3,6 +3,9 @@
 Make music with your AI agent. These plugins connect agents like Claude Code, Codex, Cursor and
 GitHub Copilot to [Controlla Voice](https://voice.controlla.xyz/mcp) and your DAW.
 
+- [`ableton/`](#ableton): build an AI song into an editable Ableton Live session (Claude Code and other agents)
+- [`logic/`](#logic-chatgpt): rebuild an AI song as an editable Logic Pro session (ChatGPT)
+
 Each plugin folder is packaged two ways:
 
 - **Claude Code plugin**: `.claude-plugin/plugin.json`, `.mcp.json` and `commands/`
@@ -98,3 +101,26 @@ switch in Claude Code, run these one at a time:
 
 You don't need to run setup again: the connector and the analysis
 environment stay where they are.
+
+## logic (ChatGPT)
+
+A skill for **ChatGPT** that generates (or takes) a Controlla song and rebuilds it as an editable
+**Logic Pro** session: aligned stems underneath, simplified held MIDI parts on basic stock
+instruments, and the regenerated drum kit played by MIDI in Drum Machine Designer.
+
+**[Download the skill (zip)](https://github.com/Controlla-Inc/ai-agent-plugins/raw/main/logic/rebuild-controlla-song-in-logic.zip)**
+· [browse the files](logic/skills/rebuild-controlla-song-in-logic)
+
+> *"Can you make me a song using the Controlla Voice MCP, afro r&b, male dreamy vocals, get back the
+> stems, MIDI parts and a drum kit clone, and rebuild the song in Logic Pro ready to hand off to me."*
+
+### You need
+
+- The **ChatGPT desktop app** on macOS (the browser version can't control Logic).
+- The Controlla connector added as a custom MCP server: `https://api.controlla.xyz/mcp`. It signs in
+  on first use and spends your [Controlla Voice](https://voice.controlla.xyz) credits.
+- Full computer access switched on in ChatGPT's settings. Logic Pro has no MCP connector, so ChatGPT
+  operates Logic through the computer.
+- Logic Pro, and Python 3 for the alignment and MIDI scripts in `scripts/`.
+
+Add the skill to ChatGPT from the zip, then ask for a song as in the example above.

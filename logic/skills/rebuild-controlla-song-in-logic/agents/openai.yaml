@@ -1,0 +1,4 @@
+interface:
+  display_name: "Controlla to Logic Song Rebuild"
+  short_description: "Rebuild songs with aligned stems, MIDI and cloned drums"
+  default_prompt: "Use $rebuild-controlla-song-in-logic to generate or rebuild a song in Logic with aligned stems, simple editable MIDI parts and a regenerated drum kit played by MIDI."
