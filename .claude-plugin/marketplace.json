@@ -11,8 +11,8 @@
     {
       "name": "ableton",
       "source": "./ableton",
-      "description": "Turn an AI-generated song into an editable Ableton Live session: stems, MIDI parts on real instruments, a cloned drum kit, reference stems and a first mix.",
-      "version": "0.3.0",
+      "description": "Turn an AI-generated song into an editable Ableton Live session: stems, MIDI parts on real instruments, a cloned drum kit, reference stems and a first mix. Also scores a video clip: music rebuilt under the picture so it hits every cut, with sound FX.",
+      "version": "0.4.0",
       "category": "music"
     }
   ]

@@ -115,3 +115,12 @@ The user's OWN Logic song (a 48 kHz bounce), not a generation. G minor, 80.00 BP
   `logic_export.py` writes a format-1 MIDI file (tempo, key, section markers, named tracks),
   the aligned stems, the kit renamed by note, and a README. Gotcha: mido writes meta text as
   Latin-1, so an en dash in a track name crashed the export → it normalises dashes and quotes.
+
+## Connector additions for scoring to picture (2026-11-26)
+The patch now also carries `set_clip_envelope` (automation into a Session clip),
+`create_arrangement_audio_clip` (audio or VIDEO straight onto the timeline),
+`get_parameter_strings` (a device's display text for raw values), `set_track_mute` and
+`delete_track`. They exist for the `music-to-movie` skill (score a video clip); its SKILL.md
+has the gotchas (clips cut each other's tails, Live caches file length by name, Utility's
+"Output" is not linear in dB). A real track mute now exists, but REF tracks here still use
+the Utility mute so `use-stem`/`verify` keep working.

@@ -1,8 +1,18 @@
 diff --git a/AbletonMCP_Remote_Script/__init__.py b/AbletonMCP_Remote_Script/__init__.py
-index c94d91d..4854bbc 100644
+index c94d91d..73d2620 100644
 --- a/AbletonMCP_Remote_Script/__init__.py
 +++ b/AbletonMCP_Remote_Script/__init__.py
-@@ -291,7 +291,8 @@ class AbletonMCP(ControlSurface):
+@@ -287,11 +287,18 @@ class AbletonMCP(ControlSurface):
+             elif command_type == "get_track_info":
+                 track_index = params.get("track_index", 0)
+                 response["result"] = self._get_track_info(track_index)
++            elif command_type == "get_parameter_strings":
++                # what the device shows for raw values (e.g. Utility Output -0.34 -> "-12.0 dB")
++                dev = self._song.tracks[int(params.get("track_index", 0))].devices[int(params.get("device_index", 0))]
++                par = dev.parameters[int(params.get("parameter_index", 0))]
++                response["result"] = {"name": par.name, "min": float(par.min), "max": float(par.max),
++                                      "strings": [par.str_for_value(float(v)) for v in params.get("values", [])]}
+             # Commands that modify Live's state should be scheduled on the main thread
              elif command_type in ["create_midi_track", "create_audio_track", "set_track_name",
                                   "create_clip", "create_audio_clip", "add_notes_to_clip", "set_clip_name",
                                   "set_arrangement_clip_name",
@@ -12,7 +22,16 @@ index c94d91d..4854bbc 100644
                                   "clear_notes_from_clip",
                                   "set_tempo", "fire_clip", "stop_clip",
                                   "start_playback", "stop_playback",
-@@ -327,7 +328,25 @@ class AbletonMCP(ControlSurface):
+@@ -300,6 +307,8 @@ class AbletonMCP(ControlSurface):
+                                  "switch_to_arrangement_view", "set_current_song_time",
+                                  "duplicate_session_clip_to_arrangement",
+                                  "map_rack_magnitude", "inspect_rack",
++                                 "set_clip_envelope", "create_arrangement_audio_clip",
++                                 "set_track_mute", "delete_track",
+                                  "create_locator"]:
+                 # Use a thread-safe approach with a response queue
+                 response_queue = queue.Queue()
+@@ -327,7 +336,25 @@ class AbletonMCP(ControlSurface):
                              track_index = params.get("track_index", 0)
                              clip_index = params.get("clip_index", 0)
                              path = params.get("path", "")
@@ -39,7 +58,38 @@ index c94d91d..4854bbc 100644
                          elif command_type == "add_notes_to_clip":
                              track_index = params.get("track_index", 0)
                              clip_index = params.get("clip_index", 0)
-@@ -451,6 +470,8 @@ class AbletonMCP(ControlSurface):
+@@ -400,6 +427,21 @@ class AbletonMCP(ControlSurface):
+                             name = params.get("name", "")
+                             time_val = params.get("time", 0.0)
+                             result = self._create_locator(name, time_val)
++                        elif command_type == "set_clip_envelope":
++                            result = self._set_clip_envelope(params)
++                        elif command_type == "create_arrangement_audio_clip":
++                            result = self._create_arrangement_audio_clip(params)
++                        elif command_type == "set_track_mute":
++                            t = self._song.tracks[int(params.get("track_index", 0))]
++                            t.mute = bool(params.get("mute", True))
++                            result = {"name": t.name, "mute": bool(t.mute)}
++                        elif command_type == "delete_track":
++                            i = int(params.get("track_index", 0))
++                            name = self._song.tracks[i].name
++                            if params.get("expect_name") and params["expect_name"] != name:
++                                raise Exception("track {0} is {1}, not {2}".format(i, name, params["expect_name"]))
++                            self._song.delete_track(i)
++                            result = {"deleted": name}
+ 
+                         # Put the result in the queue
+                         response_queue.put({"status": "success", "result": result})
+@@ -417,7 +459,7 @@ class AbletonMCP(ControlSurface):
+                 
+                 # create_audio_clip decodes/imports the file on the main
+                 # thread and needs more than the default headroom.
+-                long_running_commands = {"create_audio_clip": 60.0}
++                long_running_commands = {"create_audio_clip": 60.0, "create_arrangement_audio_clip": 60.0}
+                 queue_timeout = long_running_commands.get(command_type, 10.0)
+                 try:
+                     task_response = response_queue.get(timeout=queue_timeout)
+@@ -451,6 +493,8 @@ class AbletonMCP(ControlSurface):
              elif command_type == "get_arrangement_clips":
                  track_index = params.get("track_index", 0)
                  response["result"] = self._get_arrangement_clips(track_index)
@@ -48,7 +98,7 @@ index c94d91d..4854bbc 100644
              # Dataset / state-snapshot reads
              elif command_type == "get_clip_notes":
                  track_index = params.get("track_index", 0)
-@@ -723,12 +744,77 @@ class AbletonMCP(ControlSurface):
+@@ -723,12 +767,144 @@ class AbletonMCP(ControlSurface):
              self.log_message("Error creating clip: " + str(e))
              raise
  
@@ -106,6 +156,73 @@ index c94d91d..4854bbc 100644
 +        clip.warping = bool(warping)
 +        return {"warping": clip.warping, "length": clip.length}
 +
++    def _set_clip_envelope(self, params):
++        """Write an automation envelope into a SESSION clip (Live returns no envelope
++        for Arrangement clips); duplicate the clip to the Arrangement afterwards.
++
++        target: device_index + parameter_index, or mixer = "volume" | "pan" | "send:<n>".
++        steps: [[time_beats, length_beats, value], ...] - value in the parameter's own
++        range, or 0..1 of that range when normalized is true. clear=True wipes the
++        parameter's existing envelope first.
++        """
++        track = self._song.tracks[int(params.get("track_index", 0))]
++        clip = track.clip_slots[int(params.get("clip_index", 0))].clip
++        if clip is None:
++            raise Exception("No clip in slot")
++        mixer = params.get("mixer")
++        if mixer:
++            md = track.mixer_device
++            if mixer == "volume":
++                param = md.volume
++            elif mixer == "pan":
++                param = md.panning
++            elif mixer.startswith("send:"):
++                param = md.sends[int(mixer.split(":")[1])]
++            else:
++                raise Exception("unknown mixer target " + str(mixer))
++        else:
++            dev = track.devices[int(params.get("device_index", 0))]
++            param = dev.parameters[int(params.get("parameter_index", 0))]
++        if params.get("clear"):
++            try:
++                clip.clear_envelope(param)
++            except Exception:
++                pass
++        env = clip.automation_envelope(param)
++        if env is None:
++            env = clip.create_automation_envelope(param)
++        if env is None:
++            raise Exception("Live gave no envelope for " + param.name)
++        lo, hi = float(param.min), float(param.max)
++        norm = bool(params.get("normalized", False))
++        n = 0
++        for time_b, length_b, value in params.get("steps", []):
++            v = float(value)
++            if norm:
++                v = lo + (hi - lo) * v
++            v = max(lo, min(hi, v))
++            env.insert_step(float(time_b), float(length_b), v)
++            n += 1
++        return {"parameter": param.name, "min": lo, "max": hi, "steps": n}
++
++    def _create_arrangement_audio_clip(self, params):
++        """Place a file straight on the Arrangement timeline (Live 12.2+:
++        Track.create_audio_clip). A video file keeps its picture this way."""
++        track = self._song.tracks[int(params.get("track_index", 0))]
++        path = params.get("path", "")
++        if not os.path.isabs(path) or not os.path.exists(path):
++            raise Exception("file not found: " + str(path))
++        clip = track.create_audio_clip(path, float(params.get("position", 0.0)))
++        if "warping" in params:
++            try:
++                clip.warping = bool(params["warping"])
++            except Exception:
++                pass
++        if params.get("name"):
++            clip.name = params["name"]
++        return {"name": clip.name, "start_time": clip.start_time, "end_time": clip.end_time,
++                "length": clip.length, "warping": bool(clip.warping)}
++
 +    def _delete_arrangement_clip(self, track_index, clip_index):
 +        """Delete an Arrangement clip, indexed in start-time order (as get_arrangement_clips)."""
 +        track = self._song.tracks[track_index]
@@ -127,7 +244,7 @@ index c94d91d..4854bbc 100644
          """
          try:
              if not path:
-@@ -760,6 +846,8 @@ class AbletonMCP(ControlSurface):
+@@ -760,6 +936,8 @@ class AbletonMCP(ControlSurface):
                  )
  
              clip_slot.create_audio_clip(path)
@@ -136,7 +253,7 @@ index c94d91d..4854bbc 100644
  
              result = {
                  "name": clip_slot.clip.name,
-@@ -1291,12 +1379,14 @@ class AbletonMCP(ControlSurface):
+@@ -1291,12 +1469,14 @@ class AbletonMCP(ControlSurface):
          return self._load_browser_item(track_index, uri)
  
      def _load_browser_item(self, track_index, item_uri):
@@ -155,7 +272,7 @@ index c94d91d..4854bbc 100644
              
              # Access the application's browser instance instead of creating a new one
              app = self.application()
-@@ -1307,12 +1397,28 @@ class AbletonMCP(ControlSurface):
+@@ -1307,12 +1487,28 @@ class AbletonMCP(ControlSurface):
              if not item:
                  raise ValueError("Browser item with URI '{0}' not found".format(item_uri))
              

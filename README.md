@@ -3,7 +3,7 @@
 Make music with your AI agent. These plugins connect agents like Claude Code, Codex, Cursor and
 GitHub Copilot to [Controlla Voice](https://voice.controlla.xyz/mcp) and your DAW.
 
-- [`ableton/`](#ableton): build an AI song into an editable Ableton Live session (Claude Code and other agents)
+- [`ableton/`](#ableton): build an AI song into an editable Ableton Live session, or [score a video clip](#score-a-video-music-to-movie) in Ableton (Claude Code and other agents)
 - [`logic/`](#logic-chatgpt): rebuild an AI song as an editable Logic Pro session (ChatGPT)
 
 Each plugin folder is packaged two ways:
@@ -24,6 +24,20 @@ original stems underneath as muted references, and does a first mix. Using Logic
 exports the same draft as a MIDI file, aligned stems, the drum kit and a README.
 
 > *"Make me a trap soul song with dreamy vocals, use my AI voice, and build it in Ableton."*
+
+### Score a video (music to movie)
+
+The same plugin also scores a video clip. Give your agent a trailer, scene or edit and it reads
+the cuts, picks a tempo where the big moments land on a bar line, generates an original song
+with Controlla, then rebuilds it in Ableton **under the picture**: trailer drums on the cuts,
+strings with expression automation, and designed sound FX (impacts, braams, risers, whooshes,
+sub drops) placed on the frame. You get the video on the timeline plus stems, MIDI and a drum
+kit you can edit.
+
+> *"Here's my trailer clip. Score it in Ableton with big cinematic drums that hit every cut."*
+
+Needs `ffmpeg` too (`brew install ffmpeg`). If you set up the plugin before this skill was
+added, update it and run `/ableton:setup` again, then quit and reopen Live.
 
 ### Install in Claude Code
 
